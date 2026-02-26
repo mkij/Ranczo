@@ -4,6 +4,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuizStore } from '../src/stores/quizStore';
 import { Category } from '../src/types/quiz';
 import { getRandomQuestions, getCategoryQuestionCount } from '../src/data/questionLoader';
+import { ScaledText } from '../src/components/ScaledText';
+
+
 
 const CATEGORY_LABELS: Record<Category, string> = {
   characters: 'Postacie',
@@ -35,6 +38,7 @@ export default function CategoryScreen() {
   const questionsPerQuiz = 10;
 
   const totalQuestions = getCategoryQuestionCount(category);
+  
   const best = bestScores[category];
   const label = CATEGORY_LABELS[category] ?? category;
   const icon = CATEGORY_ICONS[category] ?? '❓';
@@ -53,26 +57,26 @@ export default function CategoryScreen() {
       {/* Back button */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Wróć</Text>
+          <ScaledText style={styles.backButtonText}>← Wróć</ScaledText>
         </TouchableOpacity>
       </View>
 
       <View style={styles.container}>
         {/* Category info */}
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>{icon}</Text>
+          <ScaledText style={styles.icon}>{icon}</ScaledText>
         </View>
-        <Text style={styles.title}>{label}</Text>
-        <Text style={styles.subtitle}>{totalQuestions} pytań w puli</Text>
+        <ScaledText style={styles.title}>{label}</ScaledText>
+        <ScaledText style={styles.subtitle}>{totalQuestions} pytań w puli</ScaledText>
 
         {best !== undefined && (
           <View style={styles.bestScoreBadge}>
-            <Text style={styles.bestScoreText}>Najlepszy wynik: {best}</Text>
+            <ScaledText style={styles.bestScoreText}>Najlepszy wynik: {best}</ScaledText>
           </View>
         )}
 
         {/* Difficulty selection */}
-        <Text style={styles.difficultyLabel}>POZIOM</Text>
+        <ScaledText style={styles.difficultyLabel}>POZIOM</ScaledText>
         <View style={styles.difficultyRow}>
           <TouchableOpacity
             style={[
@@ -82,18 +86,18 @@ export default function CategoryScreen() {
             activeOpacity={0.85}
             onPress={() => setDifficultyFilter('mixed')}
           >
-            <Text style={[
+            <ScaledText style={[
               styles.difficultyTitle,
               difficultyFilter === 'mixed' && styles.difficultyTitleActive,
             ]}>
               Mieszany
-            </Text>
-            <Text style={[
+            </ScaledText>
+            <ScaledText style={[
               styles.difficultyDesc,
               difficultyFilter === 'mixed' && styles.difficultyDescActive,
             ]}>
               dla wszystkich
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -104,24 +108,24 @@ export default function CategoryScreen() {
             activeOpacity={0.85}
             onPress={() => setDifficultyFilter('fans_only')}
           >
-            <Text style={[
+            <ScaledText style={[
               styles.difficultyTitle,
               difficultyFilter === 'fans_only' && styles.difficultyTitleActive,
             ]}>
               Tylko dla fanów
-            </Text>
-            <Text style={[
+            </ScaledText>
+            <ScaledText style={[
               styles.difficultyDesc,
               difficultyFilter === 'fans_only' && styles.difficultyDescActive,
             ]}>
               trudne pytania
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
         </View>
 
         {/* Start button */}
         <TouchableOpacity style={styles.startButton} activeOpacity={0.85} onPress={handleStart}>
-          <Text style={styles.startButtonText}>GRAJ</Text>
+          <ScaledText style={styles.startButtonText}>GRAJ</ScaledText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

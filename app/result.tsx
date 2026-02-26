@@ -10,6 +10,7 @@ import { playSound } from '../src/utils/sounds';
 
 
 
+
 // Fan levels based on percentage
 function getFanLevel(percent: number): { title: string; emoji: string } {
     if (percent >= 95) return { title: 'Wójt Wilkowyj', emoji: '👑' };
@@ -48,6 +49,7 @@ export default function ResultScreen() {
     const fanLevel = getFanLevel(percent);
 
     const shareCardRef = useRef<View>(null);
+    
 
     const handleShare = async () => {
         try {

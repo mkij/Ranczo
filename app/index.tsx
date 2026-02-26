@@ -2,10 +2,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES } from '../src/constants/theme';
 import { useQuizStore } from '../src/stores/quizStore';
+import { useSettingsStore } from '../src/stores/settingsStore';
 import { Category } from '../src/types/quiz';
 import { getCategoryQuestionCount } from '../src/data/questionLoader';
 import { useRouter } from 'expo-router';
 import { getRandomQuestions, getDailyQuestions } from '../src/data/questionLoader';
+import { ScaledText } from '../src/components/ScaledText';
+
+
 
 const CATEGORIES: { key: Category; label: string; icon: string }[] = [
   { key: 'characters', label: 'Postacie', icon: '👤' },
@@ -18,10 +22,12 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
 
 export default function HomeScreen() {
   const bestScores = useQuizStore((s) => s.bestScores);
+  const fontScale = useSettingsStore((s) => s.fontScale);
 
   const router = useRouter();
   const startQuiz = useQuizStore((s) => s.startQuiz);
   const isDailyCompleted = useQuizStore((s) => s.isDailyCompleted);
+  
 
   const handleDailyQuiz = () => {
     if (isDailyCompleted()) {
@@ -56,8 +62,8 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerLabel}>WITAJ W</Text>
-          <Text style={styles.title}>Ranczo Quiz</Text>
+          <ScaledText style={styles.headerLabel}>WITAJ W</ScaledText>
+          <ScaledText style={styles.title}>Ranczo Quiz</ScaledText>
         </View>
 
         {/* Daily Challenge */}
@@ -73,19 +79,19 @@ export default function HomeScreen() {
           <View style={styles.dailyContent}>
             <View style={styles.dailyTop}>
               <View>
-                <Text style={styles.dailyLabel}>QUIZ DNIA</Text>
-                <Text style={styles.dailyDate}>{todayFormatted}</Text>
-                <Text style={styles.dailySubtext}>10 pytań · jedna szansa dziennie</Text>
+                <ScaledText style={styles.dailyLabel}>QUIZ DNIA</ScaledText>
+                <ScaledText style={styles.dailyDate}>{todayFormatted}</ScaledText>
+                <ScaledText style={styles.dailySubtext}>10 pytań · jedna szansa dziennie</ScaledText>
               </View>
               <View style={styles.dailyIcon}>
-                <Text style={styles.dailyIconText}>📅</Text>
+                <ScaledText style={styles.dailyIconText}>📅</ScaledText>
               </View>
             </View>
 
             <View style={styles.dailyButton}>
-              <Text style={styles.dailyButtonText}>
+              <ScaledText style={styles.dailyButtonText}>
                 {isDailyCompleted() ? 'Wróć jutro po nowe pytania!' : 'Zagraj teraz →'}
-              </Text>
+              </ScaledText>
             </View>
           </View>
         </TouchableOpacity>
@@ -94,18 +100,18 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.quickPlayCard} activeOpacity={0.85} onPress={handleRandomQuiz}>
           <View style={styles.quickPlayLeft}>
             <View style={styles.quickPlayIcon}>
-              <Text style={styles.quickPlayIconText}>🎲</Text>
+              <ScaledText style={styles.quickPlayIconText}>🎲</ScaledText>
             </View>
             <View>
-              <Text style={styles.quickPlayTitle}>Losowy Quiz</Text>
-              <Text style={styles.quickPlaySubtext}>Mieszanka ze wszystkiego</Text>
+              <ScaledText style={styles.quickPlayTitle}>Losowy Quiz</ScaledText>
+              <ScaledText style={styles.quickPlaySubtext}>Mieszanka ze wszystkiego</ScaledText>
             </View>
           </View>
-          <Text style={styles.chevron}>›</Text>
+          <ScaledText style={styles.chevron}>›</ScaledText>
         </TouchableOpacity>
 
         {/* Categories */}
-        <Text style={styles.sectionLabel}>KATEGORIE</Text>
+        <ScaledText style={styles.sectionLabel}>KATEGORIE</ScaledText>
 
         {CATEGORIES.map((cat) => {
           const best = bestScores[cat.key];
@@ -122,20 +128,20 @@ export default function HomeScreen() {
               >
               <View style={styles.categoryLeft}>
                 <View style={styles.categoryIcon}>
-                  <Text style={styles.categoryIconText}>{cat.icon}</Text>
+                  <ScaledText style={styles.categoryIconText}>{cat.icon}</ScaledText>
                 </View>
                 <View>
-                  <Text style={styles.categoryLabel}>{cat.label}</Text>
-                  <Text style={styles.categoryCount}>{count} pytań</Text>
+                  <ScaledText style={styles.categoryLabel}>{cat.label}</ScaledText>
+                  <ScaledText style={styles.categoryCount}>{count} pytań</ScaledText>
                 </View>
               </View>
               <View style={styles.categoryRight}>
                 {best !== undefined && (
                   <View style={styles.bestScoreBadge}>
-                    <Text style={styles.bestScoreText}>{best}</Text>
+                    <ScaledText style={styles.bestScoreText}>{best}</ScaledText>
                   </View>
                 )}
-                <Text style={styles.chevronSmall}>›</Text>
+                <ScaledText style={styles.chevronSmall}>›</ScaledText>
               </View>
             </Pressable>
           );
@@ -147,14 +153,14 @@ export default function HomeScreen() {
           activeOpacity={0.85}
           onPress={() => router.push('/settings')}
         >
-          <Text style={styles.settingsIcon}>⚙️</Text>
-          <Text style={styles.settingsText}>Ustawienia</Text>
+          <ScaledText style={styles.settingsIcon}>⚙️</ScaledText>
+          <ScaledText style={styles.settingsText}>Ustawienia</ScaledText>
         </TouchableOpacity>
 
         {/* Fan Level */}
         <View style={styles.levelCard}>
-          <Text style={styles.levelLabel}>TWÓJ POZIOM</Text>
-          <Text style={styles.levelTitle}>Stały bywalec ławeczki</Text>
+          <ScaledText style={styles.levelLabel}>TWÓJ POZIOM</ScaledText>
+          <ScaledText style={styles.levelTitle}>Stały bywalec ławeczki</ScaledText>
         </View>
       </ScrollView>
     </SafeAreaView>

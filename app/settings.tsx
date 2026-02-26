@@ -4,6 +4,9 @@ import { useRouter } from 'expo-router';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { FontScale } from '../src/constants/theme';
 import { useQuizStore } from '../src/stores/quizStore';
+import { ScaledText } from '../src/components/ScaledText';
+
+
 
 const FONT_SCALE_OPTIONS: { key: FontScale; label: string; size: number }[] = [
   { key: 'small', label: 'A', size: 14 },
@@ -24,6 +27,8 @@ export default function SettingsScreen() {
     setQuestionsPerQuiz,
   } = useSettingsStore();
 
+  
+
   const clearAllProgress = useQuizStore((s) => s.clearAllProgress);
 
   const handleClearProgress = () => {
@@ -42,15 +47,15 @@ export default function SettingsScreen() {
       {/* Top bar */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Wróć</Text>
+          <ScaledText style={styles.backButtonText}>← Wróć</ScaledText>
         </TouchableOpacity>
       </View>
 
       <View style={styles.container}>
-        <Text style={styles.title}>Ustawienia</Text>
+        <ScaledText style={styles.title}>Ustawienia</ScaledText>
 
         {/* Font size */}
-        <Text style={styles.sectionLabel}>ROZMIAR TEKSTU</Text>
+        <ScaledText style={styles.sectionLabel}>ROZMIAR TEKSTU</ScaledText>
         <View style={styles.fontScaleRow}>
           {FONT_SCALE_OPTIONS.map((opt) => (
             <TouchableOpacity
@@ -62,25 +67,25 @@ export default function SettingsScreen() {
               activeOpacity={0.85}
               onPress={() => setFontScale(opt.key)}
             >
-              <Text style={[
+              <ScaledText style={[
                 styles.fontScaleText,
                 { fontSize: opt.size },
                 fontScale === opt.key && styles.fontScaleTextActive,
               ]}>
                 {opt.label}
-              </Text>
-              <Text style={[
+              </ScaledText>
+              <ScaledText style={[
                 styles.fontScaleLabel,
                 fontScale === opt.key && styles.fontScaleLabelActive,
               ]}>
                 {opt.key === 'small' ? 'mały' : opt.key === 'normal' ? 'normalny' : 'duży'}
-              </Text>
+              </ScaledText>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Questions per quiz */}
-        <Text style={styles.sectionLabel}>LICZBA PYTAŃ W QUIZIE</Text>
+        <ScaledText style={styles.sectionLabel}>LICZBA PYTAŃ W QUIZIE</ScaledText>
         <View style={styles.questionsRow}>
           {QUESTIONS_OPTIONS.map((count) => (
             <TouchableOpacity
@@ -92,12 +97,12 @@ export default function SettingsScreen() {
               activeOpacity={0.85}
               onPress={() => setQuestionsPerQuiz(count)}
             >
-              <Text style={[
+              <ScaledText style={[
                 styles.questionsText,
                 questionsPerQuiz === count && styles.questionsTextActive,
               ]}>
                 {count}
-              </Text>
+              </ScaledText>
             </TouchableOpacity>
           ))}
         </View>
@@ -105,8 +110,8 @@ export default function SettingsScreen() {
         {/* Sound */}
         <View style={styles.switchRow}>
           <View>
-            <Text style={styles.switchTitle}>Dźwięki</Text>
-            <Text style={styles.switchDesc}>Efekty przy odpowiedziach</Text>
+            <ScaledText style={styles.switchTitle}>Dźwięki</ScaledText>
+            <ScaledText style={styles.switchDesc}>Efekty przy odpowiedziach</ScaledText>
           </View>
           <Switch
             value={soundEnabled}
@@ -121,18 +126,18 @@ export default function SettingsScreen() {
 
         {/* Links */}
         <TouchableOpacity style={styles.linkRow} activeOpacity={0.7}>
-          <Text style={styles.linkText}>Oceń aplikację</Text>
-          <Text style={styles.linkChevron}>›</Text>
+          <ScaledText style={styles.linkText}>Oceń aplikację</ScaledText>
+          <ScaledText style={styles.linkChevron}>›</ScaledText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.linkRow} activeOpacity={0.7}>
-          <Text style={styles.linkText}>Zgłoś błąd / Kontakt</Text>
-          <Text style={styles.linkChevron}>›</Text>
+          <ScaledText style={styles.linkText}>Zgłoś błąd / Kontakt</ScaledText>
+          <ScaledText style={styles.linkChevron}>›</ScaledText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.linkRow} activeOpacity={0.7}>
-          <Text style={styles.linkText}>Polityka prywatności</Text>
-          <Text style={styles.linkChevron}>›</Text>
+          <ScaledText style={styles.linkText}>Polityka prywatności</ScaledText>
+          <ScaledText style={styles.linkChevron}>›</ScaledText>
         </TouchableOpacity>
 
         <View style={styles.divider} />
@@ -140,11 +145,11 @@ export default function SettingsScreen() {
         {/* Reset */}
                 <TouchableOpacity style={styles.resetButton} activeOpacity={0.85} onPress={handleClearProgress}>
 
-          <Text style={styles.resetButtonText}>Wyczyść postęp</Text>
+          <ScaledText style={styles.resetButtonText}>Wyczyść postęp</ScaledText>
         </TouchableOpacity>
 
         {/* Version */}
-        <Text style={styles.version}>Ranczo Quiz v1.0.0</Text>
+        <ScaledText style={styles.version}>Ranczo Quiz v1.0.0</ScaledText>
       </View>
     </SafeAreaView>
   );

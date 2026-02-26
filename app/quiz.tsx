@@ -7,6 +7,7 @@ import { useQuizStore } from '../src/stores/quizStore';
 import { Question } from '../src/types/quiz';
 import { playSound } from '../src/utils/sounds';
 
+
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export default function QuizScreen() {
@@ -22,6 +23,7 @@ export default function QuizScreen() {
 
   const [selectedIndexes, setSelectedIndexes] = useState<number[]>([]);
   const [confirmed, setConfirmed] = useState(false);
+  
 
   const question = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;

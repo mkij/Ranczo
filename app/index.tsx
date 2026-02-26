@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
   },
   headerLabel: {
     fontSize: FONT_SIZES.label,
+    fontFamily: 'DMSans_500Medium',
     fontWeight: '500',
     color: COLORS.textSecondary,
     letterSpacing: 3,
@@ -191,6 +192,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FONT_SIZES.title,
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontWeight: '700',
     color: COLORS.text,
   },
@@ -231,6 +233,7 @@ const styles = StyleSheet.create({
   },
   dailyLabel: {
     fontSize: FONT_SIZES.label,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: 'rgba(255,255,255,0.75)',
     letterSpacing: 3,
@@ -241,6 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
   dailySubtext: {
     fontSize: FONT_SIZES.caption,
@@ -270,6 +274,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: 0.5,
+    fontFamily: 'DMSans_600SemiBold',
   },
 
   // Quick Play
@@ -303,6 +308,7 @@ const styles = StyleSheet.create({
   },
   quickPlayTitle: {
     fontSize: 15,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: COLORS.text,
   },
@@ -320,6 +326,7 @@ const styles = StyleSheet.create({
   // Categories
   sectionLabel: {
     fontSize: FONT_SIZES.label,
+    fontFamily: 'DMSans_600SemiBold', 
     fontWeight: '600',
     color: COLORS.textSecondary,
     letterSpacing: 3,
@@ -367,7 +374,8 @@ const styles = StyleSheet.create({
     fontSize: 21,
   },
   categoryLabel: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: COLORS.text,
   },
@@ -417,6 +425,7 @@ const styles = StyleSheet.create({
   },
   levelTitle: {
     fontSize: 18,
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontWeight: '700',
     color: COLORS.text,
   },

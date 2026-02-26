@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
   scoreBadgeText: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'DMSans_700Bold',
     color: COLORS.primary,
   },
 
@@ -374,6 +375,7 @@ const styles = StyleSheet.create({
   },
   typeLabel: {
     fontSize: FONT_SIZES.label,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: COLORS.textSecondary,
     letterSpacing: 1.5,
@@ -397,6 +399,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     lineHeight: 30,
     marginBottom: 28,
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
 
   // Options
@@ -433,6 +436,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
+    fontFamily: 'DMSans_500Medium',
     color: COLORS.text,
     fontWeight: '500',
     flex: 1,
@@ -570,6 +574,7 @@ const styles = StyleSheet.create({
   },
   explanationLabel: {
     fontSize: 14,
+    fontFamily: 'DMSans_700Bold',
     fontWeight: '700',
     marginBottom: 6,
   },
@@ -595,6 +600,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     fontSize: 15,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: 0.3,

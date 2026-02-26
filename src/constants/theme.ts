@@ -12,24 +12,33 @@ export const FONT_SIZES = {
   question: 20,
   option: 17,
   body: 16,
-  caption: 14,
-  title: 28,
+  caption: 13,
+  title: 32,
   subtitle: 18,
+  label: 11,
 } as const;
 
-// Color palette - earthy/rural vibe inspired by the show
+// Color palette - modern warm minimal
 export const COLORS = {
-  primary: '#2E7D32',       // deep green
-  primaryLight: '#4CAF50',  // lighter green
-  background: '#FAFAF5',    // warm off-white
-  surface: '#FFFFFF',
-  text: '#1B1B1B',
-  textSecondary: '#5F5F5F',
-  correct: '#2E7D32',
+  primary: '#2E5A2E',
+  primaryLight: '#3A6B35',
+  background: '#FAF8F3',
+  backgroundGradientEnd: '#F3EDE4',
+  surface: '#FEFDFB',
+  surfaceHover: '#FFFFFF',
+  text: '#2C2418',
+  textSecondary: '#9A8E7F',
+  textMuted: '#B0A594',
+  correct: '#2E5A2E',
   incorrect: '#C62828',
-  border: '#E0E0E0',
-  accent: '#F9A825',        // warm yellow for highlights
-  card: '#FFFFFF',
+  border: '#E8E2D8',
+  accent: '#F5C842',
+  accentDark: '#E8A920',
+  card: '#FEFDFB',
+  white: '#FFFFFF',
+  bestScoreBg: '#E8F0E8',
+  bestScoreText: '#2E5A2E',
+  iconBg: '#F5F2EC',
   shadow: '#000000',
 } as const;
 
@@ -45,4 +54,5 @@ export const RADIUS = {
   sm: 8,
   md: 12,
   lg: 16,
+  xl: 20,
 } as const;

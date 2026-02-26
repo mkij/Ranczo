@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontWeight: '700',
     color: '#2C2418',
     marginBottom: 28,
@@ -183,6 +184,7 @@ const styles = StyleSheet.create({
   // Section label
   sectionLabel: {
     fontSize: 11,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: '#9A8E7F',
     letterSpacing: 3,
@@ -266,6 +268,7 @@ const styles = StyleSheet.create({
   },
   switchTitle: {
     fontSize: 15,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: '#2C2418',
   },

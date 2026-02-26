@@ -239,12 +239,14 @@ const styles = StyleSheet.create({
     levelLabel: {
         fontSize: 11,
         fontWeight: '600',
+        fontFamily: 'DMSans_600SemiBold',
         color: '#9A8E7F',
         letterSpacing: 3,
         marginBottom: 6,
     },
     levelTitle: {
         fontSize: 26,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontWeight: '700',
         color: '#2C2418',
         textAlign: 'center',
@@ -270,6 +272,7 @@ const styles = StyleSheet.create({
     },
     scoreValue: {
         fontSize: 24,
+        fontFamily: 'DMSans_700Bold',
         fontWeight: '700',
         color: '#2E5A2E',
         marginBottom: 4,
@@ -295,6 +298,7 @@ const styles = StyleSheet.create({
     },
     primaryButtonText: {
         fontSize: 15,
+        fontFamily: 'DMSans_600SemiBold',
         fontWeight: '600',
         color: '#FFFFFF',
         letterSpacing: 0.3,
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
     },
     secondaryButtonText: {
         fontSize: 15,
+        fontFamily: 'DMSans_600SemiBold',
         fontWeight: '600',
         color: '#2C2418',
         letterSpacing: 0.3,
@@ -318,6 +323,7 @@ const styles = StyleSheet.create({
     // Review
     reviewTitle: {
         fontSize: 11,
+        fontFamily: 'DMSans_600SemiBold',
         fontWeight: '600',
         color: '#9A8E7F',
         letterSpacing: 3,
@@ -367,6 +373,7 @@ const styles = StyleSheet.create({
     },
     reviewQuestion: {
         fontSize: 15,
+        fontFamily: 'DMSans_600SemiBold',
         fontWeight: '600',
         color: '#2C2418',
         lineHeight: 21,

@@ -169,6 +169,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2C2418',
     marginBottom: 6,
   },
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
   },
   difficultyTitle: {
     fontSize: 15,
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: '#2C2418',
     marginBottom: 3,
@@ -245,6 +247,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     fontSize: 17,
+    fontFamily: 'DMSans_700Bold',
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 1,

@@ -4,9 +4,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuizStore } from '../src/stores/quizStore';
 import { Category } from '../src/types/quiz';
 import { getRandomQuestions, getCategoryQuestionCount } from '../src/data/questionLoader';
+import { useSettingsStore } from '../src/stores/settingsStore';
 import { ScaledText } from '../src/components/ScaledText';
-
-
 
 const CATEGORY_LABELS: Record<Category, string> = {
   characters: 'Postacie',
@@ -35,10 +34,10 @@ export default function CategoryScreen() {
   const difficultyFilter = useQuizStore((s) => s.difficultyFilter);
   const setDifficultyFilter = useQuizStore((s) => s.setDifficultyFilter);
   const bestScores = useQuizStore((s) => s.bestScores);
-  const questionsPerQuiz = 10;
+  const questionsPerQuiz = useSettingsStore((s) => s.questionsPerQuiz);
+
 
   const totalQuestions = getCategoryQuestionCount(category);
-  
   const best = bestScores[category];
   const label = CATEGORY_LABELS[category] ?? category;
   const icon = CATEGORY_ICONS[category] ?? '❓';
@@ -48,7 +47,7 @@ export default function CategoryScreen() {
       category,
       fansOnly: difficultyFilter === 'fans_only',
     });
-    startQuiz(questions);
+    startQuiz(questions, 'category');
     router.push('/quiz');
   };
 
@@ -57,26 +56,26 @@ export default function CategoryScreen() {
       {/* Back button */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ScaledText style={styles.backButtonText}>← Wróć</ScaledText>
+          <Text style={styles.backButtonText}>← Wróć</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.container}>
         {/* Category info */}
         <View style={styles.iconContainer}>
-          <ScaledText style={styles.icon}>{icon}</ScaledText>
+          <Text style={styles.icon}>{icon}</Text>
         </View>
-        <ScaledText style={styles.title}>{label}</ScaledText>
-        <ScaledText style={styles.subtitle}>{totalQuestions} pytań w puli</ScaledText>
+        <Text style={styles.title}>{label}</Text>
+        <Text style={styles.subtitle}>{totalQuestions} pytań w puli</Text>
 
         {best !== undefined && (
           <View style={styles.bestScoreBadge}>
-            <ScaledText style={styles.bestScoreText}>Najlepszy wynik: {best}</ScaledText>
+            <Text style={styles.bestScoreText}>Najlepszy wynik: {best}</Text>
           </View>
         )}
 
         {/* Difficulty selection */}
-        <ScaledText style={styles.difficultyLabel}>POZIOM</ScaledText>
+        <Text style={styles.difficultyLabel}>POZIOM</Text>
         <View style={styles.difficultyRow}>
           <TouchableOpacity
             style={[
@@ -86,18 +85,18 @@ export default function CategoryScreen() {
             activeOpacity={0.85}
             onPress={() => setDifficultyFilter('mixed')}
           >
-            <ScaledText style={[
+            <Text style={[
               styles.difficultyTitle,
               difficultyFilter === 'mixed' && styles.difficultyTitleActive,
             ]}>
               Mieszany
-            </ScaledText>
-            <ScaledText style={[
+            </Text>
+            <Text style={[
               styles.difficultyDesc,
               difficultyFilter === 'mixed' && styles.difficultyDescActive,
             ]}>
               dla wszystkich
-            </ScaledText>
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -108,24 +107,25 @@ export default function CategoryScreen() {
             activeOpacity={0.85}
             onPress={() => setDifficultyFilter('fans_only')}
           >
-            <ScaledText style={[
+            <Text style={[
               styles.difficultyTitle,
               difficultyFilter === 'fans_only' && styles.difficultyTitleActive,
             ]}>
               Tylko dla fanów
-            </ScaledText>
-            <ScaledText style={[
+            </Text>
+            <Text style={[
               styles.difficultyDesc,
               difficultyFilter === 'fans_only' && styles.difficultyDescActive,
             ]}>
               trudne pytania
-            </ScaledText>
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Start button */}
+        <ScaledText style={styles.questionsInfo}>Liczba pytań: {questionsPerQuiz}</ScaledText>
         <TouchableOpacity style={styles.startButton} activeOpacity={0.85} onPress={handleStart}>
-          <ScaledText style={styles.startButtonText}>GRAJ</ScaledText>
+          <Text style={styles.startButtonText}>GRAJ</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -173,7 +173,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2C2418',
     marginBottom: 6,
   },
@@ -225,7 +224,6 @@ const styles = StyleSheet.create({
   },
   difficultyTitle: {
     fontSize: 15,
-    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: '#2C2418',
     marginBottom: 3,
@@ -251,9 +249,13 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     fontSize: 17,
-    fontFamily: 'DMSans_700Bold',
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 1,
+  },
+  questionsInfo: {
+    fontSize: 13,
+    color: '#9A8E7F',
+    marginBottom: 16,
   },
 });

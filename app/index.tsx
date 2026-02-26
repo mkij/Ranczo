@@ -27,7 +27,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const startQuiz = useQuizStore((s) => s.startQuiz);
   const isDailyCompleted = useQuizStore((s) => s.isDailyCompleted);
-  
+
 
   const handleDailyQuiz = () => {
     if (isDailyCompleted()) {
@@ -62,8 +62,17 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <ScaledText style={styles.headerLabel}>WITAJ W</ScaledText>
-          <ScaledText style={styles.title}>Ranczo Quiz</ScaledText>
+          <View>
+            <ScaledText style={styles.headerLabel}>WITAJ W</ScaledText>
+            <ScaledText style={styles.title}>Ranczo Quiz</ScaledText>
+          </View>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+            onPress={() => router.push('/settings')}
+          >
+            <ScaledText style={styles.settingsIcon}>⛭</ScaledText>
+          </TouchableOpacity>
         </View>
 
         {/* Daily Challenge */}
@@ -119,13 +128,13 @@ export default function HomeScreen() {
 
           return (
             <Pressable
-                key={cat.key}
-                onPress={() => handleCategoryQuiz(cat.key)}
-                style={({ pressed }) => [
-                  styles.categoryCard,
-                  pressed && styles.categoryCardPressed,
-                ]}
-              >
+              key={cat.key}
+              onPress={() => handleCategoryQuiz(cat.key)}
+              style={({ pressed }) => [
+                styles.categoryCard,
+                pressed && styles.categoryCardPressed,
+              ]}
+            >
               <View style={styles.categoryLeft}>
                 <View style={styles.categoryIcon}>
                   <ScaledText style={styles.categoryIconText}>{cat.icon}</ScaledText>
@@ -146,16 +155,6 @@ export default function HomeScreen() {
             </Pressable>
           );
         })}
-
-        {/* Settings */}
-        <TouchableOpacity
-          style={styles.settingsButton}
-          activeOpacity={0.85}
-          onPress={() => router.push('/settings')}
-        >
-          <ScaledText style={styles.settingsIcon}>⚙️</ScaledText>
-          <ScaledText style={styles.settingsText}>Ustawienia</ScaledText>
-        </TouchableOpacity>
 
         {/* Fan Level */}
         <View style={styles.levelCard}>
@@ -185,7 +184,9 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: SPACING.lg,
   },
   headerLabel: {
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
   // Categories
   sectionLabel: {
     fontSize: FONT_SIZES.label,
-    fontFamily: 'DMSans_600SemiBold', 
+    fontFamily: 'DMSans_600SemiBold',
     fontWeight: '600',
     color: COLORS.textSecondary,
     letterSpacing: 3,
@@ -436,19 +437,16 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   settingsButton: {
-    flexDirection: 'row',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F5F2EC',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    marginTop: 8,
+    marginTop: 4,
   },
   settingsIcon: {
-    fontSize: 18,
-  },
-  settingsText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 20,
     color: '#9A8E7F',
   },
   dailyCardCompleted: {

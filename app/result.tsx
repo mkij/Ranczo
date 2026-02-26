@@ -7,8 +7,10 @@ import { useEffect, useRef } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { playSound } from '../src/utils/sounds';
-
-
+import { getShareText } from '../src/utils/shareTexts';
+import * as Clipboard from 'expo-clipboard';
+import { Alert } from 'react-native';
+import { ScaledText } from '../src/components/ScaledText';
 
 
 // Fan levels based on percentage
@@ -49,18 +51,32 @@ export default function ResultScreen() {
     const fanLevel = getFanLevel(percent);
 
     const shareCardRef = useRef<View>(null);
-    
+
 
     const handleShare = async () => {
         try {
+            const text = getShareText(percent, quizType === 'daily');
+            await Clipboard.setStringAsync(text);
+
             const uri = await captureRef(shareCardRef, {
                 format: 'png',
                 quality: 1,
             });
-            await Sharing.shareAsync(uri, {
-                mimeType: 'image/png',
-                dialogTitle: 'Udostępnij wynik',
-            });
+
+            Alert.alert(
+                'Tekst skopiowany!',
+                'Wklej go do wiadomości po wybraniu gdzie chcesz udostępnić.',
+                [
+                    {
+                        text: 'Udostępnij',
+                        onPress: async () => {
+                            await Sharing.shareAsync(uri, {
+                                mimeType: 'image/png',
+                            });
+                        },
+                    },
+                ]
+            );
         } catch {
             // Ignore share errors
         }
@@ -68,15 +84,15 @@ export default function ResultScreen() {
 
     // Save best score on first render
     useEffect(() => {
-    if (questions.length > 0) {
-      const category = questions[0].category;
-      updateBestScore(category, earnedPoints);
-      if (quizType === 'daily') {
-        completeDailyQuiz();
-      }
-      playSound('complete');
-    }
-  }, []);
+        if (questions.length > 0) {
+            const category = questions[0].category;
+            updateBestScore(category, earnedPoints);
+            if (quizType === 'daily') {
+                completeDailyQuiz();
+            }
+            playSound('complete');
+        }
+    }, []);
 
     const handlePlayAgain = () => {
         resetQuiz();
@@ -123,8 +139,9 @@ export default function ResultScreen() {
 
                 {/* Action buttons */}
                 <TouchableOpacity style={styles.shareButton} activeOpacity={0.85} onPress={handleShare}>
-                    <Text style={styles.shareButtonText}>📤 Udostępnij wynik</Text>
+                    <Text style={styles.shareButtonText}>Udostępnij wynik</Text>
                 </TouchableOpacity>
+                <ScaledText style={styles.shareHint}>Tekst do wklejenia zostanie skopiowany</ScaledText>
 
                 {quizType !== 'daily' && (
                     <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={handlePlayAgain}>
@@ -137,6 +154,41 @@ export default function ResultScreen() {
                 </TouchableOpacity>
 
                 {/* Hidden share card */}
+                {/* Hidden share card */}
+                <View style={styles.shareCardWrapper}>
+                    <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
+                        {/* Green hero header */}
+                        <View style={styles.shareCardHeader}>
+                            <View style={styles.shareCardCircleTop} />
+                            <View style={styles.shareCardCircleBottom} />
+                            <Text style={styles.shareCardApp}>RANCZO QUIZ</Text>
+                            <Text style={styles.shareCardQuizName}>
+                                {quizType === 'daily' ? `Quiz Dnia — ${new Date().toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}` : quizType === 'category' ? `Kategoria: ${questions[0]?.category ?? ''}` : 'Losowy Quiz'}
+                            </Text>
+                            <Text style={styles.shareCardHeroScore}>
+                                {earnedPoints}
+                                <Text style={styles.shareCardHeroMax}>/{totalPoints}</Text>
+                            </Text>
+                            <Text style={styles.shareCardHeroLabel}>PUNKTÓW</Text>
+                        </View>
+
+                        {/* Bottom section */}
+                        <View style={styles.shareCardBottom}>
+                            <Text style={styles.shareCardEmoji}>{fanLevel.emoji}</Text>
+                            <Text style={styles.shareCardLevel}>{fanLevel.title}</Text>
+                            <Text style={styles.shareCardStats}>
+                                {correctCount}/{questions.length} poprawnych | {percent}% wyniku
+                            </Text>
+                            <View style={styles.shareCardSeparator} />
+                            <Text style={styles.shareCardFooter}>Zagraj w Quiz Ranczo</Text>
+                        </View>
+                    </View>
+                </View>
+
+
+
+                {/*
+                
                 <View style={styles.shareCardWrapper}>
                     <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
                         <Text style={styles.shareCardApp}>Ranczo Quiz</Text>
@@ -155,7 +207,7 @@ export default function ResultScreen() {
                         </View>
                         <Text style={styles.shareCardFooter}>A Ty ile wiesz o Ranczu? 🏡</Text>
                     </View>
-                </View>
+                </View> */}
 
                 {/* Answers review */}
                 <Text style={styles.reviewTitle}>PRZEGLĄD ODPOWIEDZI</Text>
@@ -417,87 +469,124 @@ const styles = StyleSheet.create({
         lineHeight: 19,
     },
     // Share button
-  shareButton: {
-    backgroundColor: '#2E5A2E',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  shareButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-
-  // Hidden share card
-  shareCardWrapper: {
-    position: 'absolute',
-    left: -9999,
-    top: 0,
-  },
-  shareCard: {
-    width: 360,
-    backgroundColor: '#FAF8F3',
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E8E2D8',
-  },
-  shareCardApp: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#9A8E7F',
-    letterSpacing: 2,
-    marginBottom: 16,
-  },
-  shareCardEmoji: {
-    fontSize: 64,
-    marginBottom: 12,
-  },
-  shareCardLevel: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C2418',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  shareCardScoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEFDFB',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: '#E8E2D8',
-    marginBottom: 20,
-    gap: 20,
-  },
-  shareCardScoreItem: {
-    alignItems: 'center',
-  },
-  shareCardScoreValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#2E5A2E',
-    marginBottom: 2,
-  },
-  shareCardScoreLabel: {
-    fontSize: 12,
-    color: '#9A8E7F',
-  },
-  shareCardScoreDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#E8E2D8',
-  },
-  shareCardFooter: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#2C2418',
-    textAlign: 'center',
-  },
+    shareButton: {
+        backgroundColor: '#2E5A2E',
+        borderRadius: 14,
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    shareButtonText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        letterSpacing: 0.3,
+    },
+    // Hidden share card
+    shareCardWrapper: {
+        position: 'absolute',
+        left: -9999,
+        top: 0,
+    },
+    shareCard: {
+        width: 360,
+        borderRadius: 24,
+        overflow: 'hidden',
+    },
+    shareCardHeader: {
+        backgroundColor: '#2E5A2E',
+        paddingTop: 36,
+        paddingBottom: 32,
+        paddingHorizontal: 28,
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    shareCardCircleTop: {
+        position: 'absolute',
+        top: -25,
+        right: -25,
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+    },
+    shareCardCircleBottom: {
+        position: 'absolute',
+        bottom: -20,
+        left: -15,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+    },
+    shareCardApp: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: 'rgba(255,255,255,0.45)',
+        letterSpacing: 3,
+        marginBottom: 8,
+    },
+    shareCardQuizName: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: 'rgba(255,255,255,0.7)',
+        marginBottom: 20,
+    },
+    shareCardHeroScore: {
+        fontSize: 56,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        marginBottom: 4,
+    },
+    shareCardHeroMax: {
+        fontSize: 28,
+        fontWeight: '500',
+        color: 'rgba(255,255,255,0.5)',
+    },
+    shareCardHeroLabel: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: 'rgba(255,255,255,0.5)',
+        letterSpacing: 2,
+    },
+    shareCardBottom: {
+        backgroundColor: '#FAF8F3',
+        paddingTop: 28,
+        paddingBottom: 32,
+        paddingHorizontal: 28,
+        alignItems: 'center',
+    },
+    shareCardEmoji: {
+        fontSize: 52,
+        marginBottom: 10,
+    },
+    shareCardLevel: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#2C2418',
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    shareCardStats: {
+        fontSize: 13,
+        color: '#9A8E7F',
+        marginBottom: 20,
+    },
+    shareCardSeparator: {
+        width: 40,
+        height: 1,
+        backgroundColor: '#E8E2D8',
+        marginBottom: 20,
+    },
+    shareCardFooter: {
+        fontSize: 14,
+        fontWeight: '400',
+        color: '#9A8E7F',
+    },
+    shareHint: {
+        fontSize: 12,
+        color: '#9A8E7F',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
 });

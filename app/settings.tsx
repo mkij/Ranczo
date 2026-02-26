@@ -106,6 +106,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        <ScaledText style={styles.settingsNote}>Nie dotyczy Quizu Dnia — zawsze 10 pytań</ScaledText>
 
         {/* Sound */}
         <View style={styles.switchRow}>
@@ -325,5 +326,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#B0A594',
     marginTop: 20,
+  },
+  settingsNote: {
+    fontSize: 12,
+    color: '#B0A594',
+    marginTop: -20,
+    marginBottom: 28,
   },
 });

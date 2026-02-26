@@ -6,6 +6,8 @@ import { Question } from '../src/types/quiz';
 import { useEffect, useRef } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { playSound } from '../src/utils/sounds';
+
 
 
 // Fan levels based on percentage
@@ -64,14 +66,15 @@ export default function ResultScreen() {
 
     // Save best score on first render
     useEffect(() => {
-        if (questions.length > 0) {
-            const category = questions[0].category;
-            updateBestScore(category, earnedPoints);
-            if (quizType === 'daily') {
-                completeDailyQuiz();
-            }
-        }
-    }, []);
+    if (questions.length > 0) {
+      const category = questions[0].category;
+      updateBestScore(category, earnedPoints);
+      if (quizType === 'daily') {
+        completeDailyQuiz();
+      }
+      playSound('complete');
+    }
+  }, []);
 
     const handlePlayAgain = () => {
         resetQuiz();

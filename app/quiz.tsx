@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { COLORS, SPACING, RADIUS, FONT_SIZES } from '../src/constants/theme';
 import { useQuizStore } from '../src/stores/quizStore';
 import { Question } from '../src/types/quiz';
+import { playSound } from '../src/utils/sounds';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -46,6 +47,8 @@ export default function QuizScreen() {
       setSelectedIndexes([index]);
       setConfirmed(true);
       answerQuestion(question.id, [index]);
+      const correct = question.correctAnswers.includes(index);
+      playSound(correct ? 'correct' : 'incorrect');
     }
   };
 
@@ -53,6 +56,8 @@ export default function QuizScreen() {
     if (selectedIndexes.length === 0) return;
     setConfirmed(true);
     answerQuestion(question.id, selectedIndexes);
+    const correct = isCorrectAnswer(question, selectedIndexes);
+    playSound(correct ? 'correct' : 'incorrect');
   };
 
   const handleNext = () => {

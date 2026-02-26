@@ -5,6 +5,7 @@ import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSa
 import { PlayfairDisplay_700Bold, PlayfairDisplay_800ExtraBold } from '@expo-google-fonts/playfair-display';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { useQuizStore } from '../src/stores/quizStore';
+import { loadSounds } from '../src/utils/sounds';
 
 export default function RootLayout() {
   const [dataReady, setDataReady] = useState(false);
@@ -21,7 +22,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    Promise.all([loadSettings(), loadScores()]).then(() => {
+    Promise.all([loadSettings(), loadScores(), loadSounds()]).then(() => {
       setDataReady(true);
     });
   }, []);

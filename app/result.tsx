@@ -11,6 +11,7 @@ import { getShareText } from '../src/utils/shareTexts';
 import * as Clipboard from 'expo-clipboard';
 import { Alert } from 'react-native';
 import { ScaledText } from '../src/components/ScaledText';
+import { getItem, setItem } from '../src/utils/storage';
 
 
 // Fan levels based on percentage
@@ -90,7 +91,25 @@ export default function ResultScreen() {
             if (quizType === 'daily') {
                 completeDailyQuiz();
             }
-            playSound('complete');
+            const entry = {
+                id: Date.now().toString(),
+                quizType,
+                category: quizType === 'category' ? category : null,
+                percent,
+                earnedPoints,
+                totalPoints,
+                correctCount,
+                totalQuestions: questions.length,
+                date: new Date().toISOString(),
+                questions,
+                answers,
+            };
+            getItem('ranczo_history').then((raw) => {
+                const existing = raw ? JSON.parse(raw) : [];
+                const updated = [entry, ...existing].slice(0, 100);
+                setItem('ranczo_history', JSON.stringify(updated));
+                useQuizStore.setState({ history: updated });
+            });
         }
     }, []);
 

@@ -156,6 +156,20 @@ export default function HomeScreen() {
           );
         })}
 
+        {/* Moje wyniki */}
+        <TouchableOpacity
+          style={styles.historyButton}
+          activeOpacity={0.85}
+          onPress={() => router.push('/history')}
+        >
+          <ScaledText style={styles.historyIcon}>🏆</ScaledText>
+          <View>
+            <ScaledText style={styles.historyTitle}>Moje wyniki</ScaledText>
+            <ScaledText style={styles.historySubtext}>Historia rozgrywek i statystyki</ScaledText>
+          </View>
+          <ScaledText style={styles.historyChevron}>›</ScaledText>
+        </TouchableOpacity>
+
         {/* Fan Level */}
         <View style={styles.levelCard}>
           <ScaledText style={styles.levelLabel}>TWÓJ POZIOM</ScaledText>
@@ -451,5 +465,35 @@ const styles = StyleSheet.create({
   },
   dailyCardCompleted: {
     opacity: 0.6,
+  },
+  historyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEFDFB',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E8E2D8',
+    gap: 14,
+  },
+  historyIcon: {
+    fontSize: 28,
+  },
+  historyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'DMSans_600SemiBold',
+    color: '#2C2418',
+    marginBottom: 2,
+  },
+  historySubtext: {
+    fontSize: 12,
+    color: '#9A8E7F',
+  },
+  historyChevron: {
+    fontSize: 22,
+    color: '#B0A594',
+    marginLeft: 'auto',
   },
 });

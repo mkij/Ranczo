@@ -12,6 +12,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Alert } from 'react-native';
 import { ScaledText } from '../src/components/ScaledText';
 import { getItem, setItem } from '../src/utils/storage';
+import { useLocalSearchParams } from 'expo-router';
 
 
 // Fan levels based on percentage
@@ -34,6 +35,9 @@ function isCorrectAnswer(q: Question, selected: number[]): boolean {
 export default function ResultScreen() {
     const router = useRouter();
     const { questions, answers, resetQuiz, updateBestScore, completeDailyQuiz, quizType } = useQuizStore();
+
+    const { review } = useLocalSearchParams<{ review?: string }>();
+    const isReview = review === 'true';
 
     // Calculate results
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
@@ -85,7 +89,7 @@ export default function ResultScreen() {
 
     // Save best score on first render
     useEffect(() => {
-        if (questions.length > 0) {
+        if (questions.length > 0 && !isReview) {
             const category = questions[0].category;
             updateBestScore(category, earnedPoints);
             if (quizType === 'daily') {
@@ -157,19 +161,23 @@ export default function ResultScreen() {
                 </View>
 
                 {/* Action buttons */}
-                <TouchableOpacity style={styles.shareButton} activeOpacity={0.85} onPress={handleShare}>
-                    <Text style={styles.shareButtonText}>Udostępnij wynik</Text>
-                </TouchableOpacity>
-                <ScaledText style={styles.shareHint}>Tekst do wklejenia zostanie skopiowany</ScaledText>
+                {!isReview && (
+                    <>
+                        <TouchableOpacity style={styles.shareButton} activeOpacity={0.85} onPress={handleShare}>
+                            <Text style={styles.shareButtonText}>Udostępnij wynik</Text>
+                        </TouchableOpacity>
+                        <ScaledText style={styles.shareHint}>Tekst do wklejenia zostanie skopiowany</ScaledText>
+                    </>
+                )}
 
-                {quizType !== 'daily' && (
+                {!isReview && quizType !== 'daily' && (
                     <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={handlePlayAgain}>
                         <Text style={styles.primaryButtonText}>Zagraj ponownie</Text>
                     </TouchableOpacity>
                 )}
 
-                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={handlePlayAgain}>
-                    <Text style={styles.secondaryButtonText}>Wróć do menu</Text>
+                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={isReview ? () => router.back() : handlePlayAgain}>
+                    <Text style={styles.secondaryButtonText}>{isReview ? '← Wróć do historii' : 'Wróć do menu'}</Text>
                 </TouchableOpacity>
 
                 {/* Hidden share card */}

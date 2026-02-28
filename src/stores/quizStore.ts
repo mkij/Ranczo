@@ -4,6 +4,8 @@ import { Question, Category } from '../types/quiz';
 
 const SCORES_KEY = 'ranczo_best_scores';
 const DAILY_KEY = 'ranczo_daily';
+const HISTORY_KEY = 'ranczo_history';
+const FAN_POINTS_KEY = 'ranczo_fan_points';
 
 type DifficultyFilter = 'mixed' | 'fans_only';
 
@@ -21,8 +23,11 @@ interface QuizState {
   bestScores: Record<string, number>;
 
   // Daily tracking
-  dailyCompleted: string | null; // date string of last completed daily
+  dailyCompleted: string | null;
   quizType: 'daily' | 'random' | 'category';
+
+  // Fan progress
+  totalFanPoints: number;
 
   // Actions
   startQuiz: (questions: Question[], type?: 'daily' | 'random' | 'category') => void;
@@ -34,6 +39,7 @@ interface QuizState {
   updateBestScore: (category: string, score: number) => void;
   completeDailyQuiz: () => void;
   isDailyCompleted: () => boolean;
+  addFanPoints: (points: number) => void;
   loadScores: () => Promise<void>;
   clearAllProgress: () => Promise<void>;
 }
@@ -47,6 +53,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   bestScores: {},
   dailyCompleted: null,
   quizType: 'daily',
+  totalFanPoints: 0,
 
   startQuiz: (questions, type: 'daily' | 'random' | 'category' = 'daily') => set({
     questions,
@@ -80,8 +87,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     if (score > current) {
       const newScores = { ...get().bestScores, [category]: score };
       set({ bestScores: newScores });
-        setItem(SCORES_KEY, JSON.stringify(newScores));
-
+      setItem(SCORES_KEY, JSON.stringify(newScores));
     }
   },
 
@@ -96,15 +102,24 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     return get().dailyCompleted === today;
   },
 
+  addFanPoints: (points) => {
+    const updated = get().totalFanPoints + points;
+    set({ totalFanPoints: updated });
+    setItem(FAN_POINTS_KEY, String(updated));
+  },
+
   loadScores: async () => {
     try {
-      const [scoresRaw, dailyRaw] = await Promise.all([
+      const [scoresRaw, dailyRaw, historyRaw, fanPointsRaw] = await Promise.all([
         getItem(SCORES_KEY),
         getItem(DAILY_KEY),
+        getItem(HISTORY_KEY),
+        getItem(FAN_POINTS_KEY),
       ]);
       set({
         bestScores: scoresRaw ? JSON.parse(scoresRaw) : {},
         dailyCompleted: dailyRaw ?? null,
+        totalFanPoints: fanPointsRaw ? parseInt(fanPointsRaw, 10) : 0,
       });
     } catch {
       // Ignore errors on load
@@ -113,12 +128,15 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
   clearAllProgress: async () => {
     await Promise.all([
-        removeItem(SCORES_KEY),
-        removeItem(DAILY_KEY),
-      ]);
+      removeItem(SCORES_KEY),
+      removeItem(DAILY_KEY),
+      removeItem(HISTORY_KEY),
+      removeItem(FAN_POINTS_KEY),
+    ]);
     set({
       bestScores: {},
       dailyCompleted: null,
+      totalFanPoints: 0,
     });
   },
 }));

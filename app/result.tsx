@@ -3,16 +3,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuizStore } from '../src/stores/quizStore';
 import { Question } from '../src/types/quiz';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { playSound } from '../src/utils/sounds';
-import { getShareText } from '../src/utils/shareTexts';
-import * as Clipboard from 'expo-clipboard';
-import { Alert } from 'react-native';
 import { ScaledText } from '../src/components/ScaledText';
-import { getItem, setItem } from '../src/utils/storage';
+import { getCurrentRank, getNextRank, getPointsToNext, getProgressPercent, DAILY_BONUS } from '../src/utils/fanLevel';
 import { useLocalSearchParams } from 'expo-router';
+import { getItem, setItem } from '../src/utils/storage';
+
+
+
 
 
 // Fan levels based on percentage
@@ -35,9 +36,9 @@ function isCorrectAnswer(q: Question, selected: number[]): boolean {
 export default function ResultScreen() {
     const router = useRouter();
     const { questions, answers, resetQuiz, updateBestScore, completeDailyQuiz, quizType } = useQuizStore();
-
     const { review } = useLocalSearchParams<{ review?: string }>();
     const isReview = review === 'true';
+    const [newRank, setNewRank] = useState<{ title: string; emoji: string } | null>(null);
 
     // Calculate results
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
@@ -54,34 +55,27 @@ export default function ResultScreen() {
 
     const percent = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
     const fanLevel = getFanLevel(percent);
+    const totalFanPoints = useQuizStore((s) => s.totalFanPoints);
+    const currentRank = getCurrentRank(totalFanPoints);
+    const nextRank = getNextRank(totalFanPoints);
+    const pointsToNext = getPointsToNext(totalFanPoints);
+    const rankProgress = getProgressPercent(totalFanPoints);
+    const isDaily = quizType === 'daily';
+
 
     const shareCardRef = useRef<View>(null);
 
 
     const handleShare = async () => {
         try {
-            const text = getShareText(percent, quizType === 'daily');
-            await Clipboard.setStringAsync(text);
-
             const uri = await captureRef(shareCardRef, {
                 format: 'png',
                 quality: 1,
             });
-
-            Alert.alert(
-                'Tekst skopiowany!',
-                'Wklej go do wiadomości po wybraniu gdzie chcesz udostępnić.',
-                [
-                    {
-                        text: 'Udostępnij',
-                        onPress: async () => {
-                            await Sharing.shareAsync(uri, {
-                                mimeType: 'image/png',
-                            });
-                        },
-                    },
-                ]
-            );
+            await Sharing.shareAsync(uri, {
+                mimeType: 'image/png',
+                dialogTitle: 'Udostępnij wynik',
+            });
         } catch {
             // Ignore share errors
         }
@@ -95,6 +89,9 @@ export default function ResultScreen() {
             if (quizType === 'daily') {
                 completeDailyQuiz();
             }
+            playSound('complete');
+
+            // Save to history
             const entry = {
                 id: Date.now().toString(),
                 quizType,
@@ -112,8 +109,18 @@ export default function ResultScreen() {
                 const existing = raw ? JSON.parse(raw) : [];
                 const updated = [entry, ...existing].slice(0, 100);
                 setItem('ranczo_history', JSON.stringify(updated));
-                useQuizStore.setState({ history: updated });
             });
+
+            // Add fan points
+            const fanPoints = earnedPoints + (quizType === 'daily' ? DAILY_BONUS : 0);
+            const beforePoints = useQuizStore.getState().totalFanPoints;
+            const rankBefore = getCurrentRank(beforePoints);
+            useQuizStore.getState().addFanPoints(fanPoints);
+            const afterPoints = beforePoints + fanPoints;
+            const rankAfter = getCurrentRank(afterPoints);
+            if (rankAfter.points > rankBefore.points) {
+                setNewRank(rankAfter);
+            }
         }
     }, []);
 
@@ -135,109 +142,110 @@ export default function ResultScreen() {
             >
                 {/* Fan level */}
                 <View style={styles.levelSection}>
-                    <Text style={styles.levelEmoji}>{fanLevel.emoji}</Text>
-                    <Text style={styles.levelLabel}>TWÓJ POZIOM</Text>
-                    <Text style={styles.levelTitle}>{fanLevel.title}</Text>
+                    <ScaledText style={styles.levelEmoji}>{fanLevel.emoji}</ScaledText>
+                    <ScaledText style={styles.levelLabel}>OCENA</ScaledText>
+                    <ScaledText style={styles.levelTitle}>{fanLevel.title}</ScaledText>
                 </View>
 
                 {/* Score card */}
                 <View style={styles.scoreCard}>
                     <View style={styles.scoreRow}>
                         <View style={styles.scoreItem}>
-                            <Text style={styles.scoreValue}>{earnedPoints}</Text>
-                            <Text style={styles.scoreLabel}>punktów</Text>
+                            <ScaledText style={styles.scoreValue}>{earnedPoints}</ScaledText>
+                            <ScaledText style={styles.scoreLabel}>punktów</ScaledText>
                         </View>
                         <View style={styles.scoreDivider} />
                         <View style={styles.scoreItem}>
-                            <Text style={styles.scoreValue}>{correctCount}/{questions.length}</Text>
-                            <Text style={styles.scoreLabel}>poprawnych</Text>
+                            <ScaledText style={styles.scoreValue}>{correctCount}/{questions.length}</ScaledText>
+                            <ScaledText style={styles.scoreLabel}>poprawnych</ScaledText>
                         </View>
                         <View style={styles.scoreDivider} />
                         <View style={styles.scoreItem}>
-                            <Text style={styles.scoreValue}>{percent}%</Text>
-                            <Text style={styles.scoreLabel}>wyniku</Text>
+                            <ScaledText style={styles.scoreValue}>{percent}%</ScaledText>
+                            <ScaledText style={styles.scoreLabel}>wyniku</ScaledText>
                         </View>
                     </View>
                 </View>
 
                 {/* Action buttons */}
-                {!isReview && (
-                    <>
-                        <TouchableOpacity style={styles.shareButton} activeOpacity={0.85} onPress={handleShare}>
-                            <Text style={styles.shareButtonText}>Udostępnij wynik</Text>
-                        </TouchableOpacity>
-                        <ScaledText style={styles.shareHint}>Tekst do wklejenia zostanie skopiowany</ScaledText>
-                    </>
-                )}
+                <TouchableOpacity style={styles.shareButton} activeOpacity={0.85} onPress={handleShare}>
+                    <ScaledText style={styles.shareButtonText}>📤 Udostępnij wynik</ScaledText>
+                </TouchableOpacity>
 
-                {!isReview && quizType !== 'daily' && (
+                {quizType !== 'daily' && (
                     <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={handlePlayAgain}>
-                        <Text style={styles.primaryButtonText}>Zagraj ponownie</Text>
+                        <ScaledText style={styles.primaryButtonText}>Zagraj ponownie</ScaledText>
                     </TouchableOpacity>
                 )}
 
-                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={isReview ? () => router.back() : handlePlayAgain}>
-                    <Text style={styles.secondaryButtonText}>{isReview ? '← Wróć do historii' : 'Wróć do menu'}</Text>
+                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={handlePlayAgain}>
+                    <ScaledText style={styles.secondaryButtonText}>Wróć do menu</ScaledText>
                 </TouchableOpacity>
 
                 {/* Hidden share card */}
-                {/* Hidden share card */}
                 <View style={styles.shareCardWrapper}>
                     <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
-                        {/* Green hero header */}
-                        <View style={styles.shareCardHeader}>
-                            <View style={styles.shareCardCircleTop} />
-                            <View style={styles.shareCardCircleBottom} />
-                            <Text style={styles.shareCardApp}>RANCZO QUIZ</Text>
-                            <Text style={styles.shareCardQuizName}>
-                                {quizType === 'daily' ? `Quiz Dnia — ${new Date().toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}` : quizType === 'category' ? `Kategoria: ${questions[0]?.category ?? ''}` : 'Losowy Quiz'}
-                            </Text>
-                            <Text style={styles.shareCardHeroScore}>
-                                {earnedPoints}
-                                <Text style={styles.shareCardHeroMax}>/{totalPoints}</Text>
-                            </Text>
-                            <Text style={styles.shareCardHeroLabel}>PUNKTÓW</Text>
-                        </View>
-
-                        {/* Bottom section */}
-                        <View style={styles.shareCardBottom}>
-                            <Text style={styles.shareCardEmoji}>{fanLevel.emoji}</Text>
-                            <Text style={styles.shareCardLevel}>{fanLevel.title}</Text>
-                            <Text style={styles.shareCardStats}>
-                                {correctCount}/{questions.length} poprawnych | {percent}% wyniku
-                            </Text>
-                            <View style={styles.shareCardSeparator} />
-                            <Text style={styles.shareCardFooter}>Zagraj w Quiz Ranczo</Text>
-                        </View>
-                    </View>
-                </View>
-
-
-
-                {/*
-                
-                <View style={styles.shareCardWrapper}>
-                    <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
-                        <Text style={styles.shareCardApp}>Ranczo Quiz</Text>
-                        <Text style={styles.shareCardEmoji}>{fanLevel.emoji}</Text>
-                        <Text style={styles.shareCardLevel}>{fanLevel.title}</Text>
+                        <ScaledText style={styles.shareCardApp}>Ranczo Quiz</ScaledText>
+                        <ScaledText style={styles.shareCardEmoji}>{fanLevel.emoji}</ScaledText>
+                        <ScaledText style={styles.shareCardLevel}>{fanLevel.title}</ScaledText>
                         <View style={styles.shareCardScoreRow}>
                             <View style={styles.shareCardScoreItem}>
-                                <Text style={styles.shareCardScoreValue}>{earnedPoints}/{totalPoints}</Text>
-                                <Text style={styles.shareCardScoreLabel}>punktów</Text>
+                                <ScaledText style={styles.shareCardScoreValue}>{earnedPoints}/{totalPoints}</ScaledText>
+                                <ScaledText style={styles.shareCardScoreLabel}>punktów</ScaledText>
                             </View>
                             <View style={styles.shareCardScoreDivider} />
                             <View style={styles.shareCardScoreItem}>
-                                <Text style={styles.shareCardScoreValue}>{percent}%</Text>
-                                <Text style={styles.shareCardScoreLabel}>wyniku</Text>
+                                <ScaledText style={styles.shareCardScoreValue}>{percent}%</ScaledText>
+                                <ScaledText style={styles.shareCardScoreLabel}>wyniku</ScaledText>
                             </View>
                         </View>
-                        <Text style={styles.shareCardFooter}>A Ty ile wiesz o Ranczu? 🏡</Text>
+                        <ScaledText style={styles.shareCardFooter}>A Ty ile wiesz o Ranczu? 🏡</ScaledText>
                     </View>
-                </View> */}
+                </View>
+
+                {/* Fan points breakdown */}
+                {!isReview && (
+                    <View style={styles.fanPointsCard}>
+                        <View style={styles.fanPointsRow}>
+                            <ScaledText style={styles.fanPointsLabel}>+{earnedPoints} pkt do poziomu fana</ScaledText>
+                        </View>
+                        {isDaily && (
+                            <View style={styles.fanPointsRow}>
+                                <ScaledText style={styles.fanPointsBonus}>+{DAILY_BONUS} bonus za Quiz Dnia 🎁</ScaledText>
+                            </View>
+                        )}
+                        <View style={styles.fanPointsDivider} />
+                        <View style={styles.fanPointsRow}>
+                            <ScaledText style={styles.fanPointsTotal}>
+                                {earnedPoints + (isDaily ? DAILY_BONUS : 0)} punktów do poziomu fana
+                            </ScaledText>
+                        </View>
+
+                        {nextRank && (
+                            <View style={styles.fanProgressSection}>
+                                <View style={styles.fanProgressBar}>
+                                    <View style={[styles.fanProgressFill, { width: `${rankProgress}%` }]} />
+                                </View>
+                                <ScaledText style={styles.fanProgressText}>
+                                    Do poziomu „{nextRank.title}" brakuje {pointsToNext} punktów
+                                </ScaledText>
+                            </View>
+                        )}
+
+                        {!nextRank && (
+                            <ScaledText style={styles.fanMaxLevel}>
+                                👑 Osiągnięto najwyższy poziom!
+                            </ScaledText>
+                        )}
+
+                        {isDaily && (
+                            <ScaledText style={styles.dailyTomorrow}>Jutro nowy Quiz Dnia!</ScaledText>
+                        )}
+                    </View>
+                )}
 
                 {/* Answers review */}
-                <Text style={styles.reviewTitle}>PRZEGLĄD ODPOWIEDZI</Text>
+                <ScaledText style={styles.reviewTitle}>PRZEGLĄD ODPOWIEDZI</ScaledText>
 
                 {questions.map((q, index) => {
                     const ans = answers[q.id];
@@ -255,44 +263,62 @@ export default function ResultScreen() {
                                     styles.reviewIndicator,
                                     { backgroundColor: correct ? '#E8F5E8' : '#FDE8E8' },
                                 ]}>
-                                    <Text style={[
+                                    <ScaledText style={[
                                         styles.reviewIndicatorText,
                                         { color: correct ? '#2E5A2E' : '#C62828' },
                                     ]}>
                                         {correct ? '✓' : '✗'}
-                                    </Text>
+                                    </ScaledText>
                                 </View>
-                                <Text style={styles.reviewNumber}>Pytanie {index + 1}</Text>
+                                <ScaledText style={styles.reviewNumber}>Pytanie {index + 1}</ScaledText>
                                 <View style={styles.reviewPointsBadge}>
-                                    <Text style={styles.reviewPointsText}>
+                                    <ScaledText style={styles.reviewPointsText}>
                                         {correct ? `+${q.points}` : '+0'} pkt
-                                    </Text>
+                                    </ScaledText>
                                 </View>
                             </View>
 
                             {/* Question text */}
-                            <Text style={styles.reviewQuestion}>{q.question}</Text>
+                            <ScaledText style={styles.reviewQuestion}>{q.question}</ScaledText>
 
                             {/* Answers */}
                             {!correct && (
                                 <View style={styles.reviewAnswerRow}>
-                                    <Text style={styles.reviewAnswerLabel}>Twoja odpowiedź:</Text>
-                                    <Text style={styles.reviewAnswerWrong}>{selectedOptions}</Text>
+                                    <ScaledText style={styles.reviewAnswerLabel}>Twoja odpowiedź:</ScaledText>
+                                    <ScaledText style={styles.reviewAnswerWrong}>{selectedOptions}</ScaledText>
                                 </View>
                             )}
                             <View style={styles.reviewAnswerRow}>
-                                <Text style={styles.reviewAnswerLabel}>Poprawna:</Text>
-                                <Text style={styles.reviewAnswerCorrect}>{correctOptions}</Text>
+                                <ScaledText style={styles.reviewAnswerLabel}>Poprawna:</ScaledText>
+                                <ScaledText style={styles.reviewAnswerCorrect}>{correctOptions}</ScaledText>
                             </View>
 
                             {/* Explanation */}
                             <View style={styles.reviewExplanation}>
-                                <Text style={styles.reviewExplanationText}>{q.explanation}</Text>
+                                <ScaledText style={styles.reviewExplanationText}>{q.explanation}</ScaledText>
                             </View>
                         </View>
                     );
                 })}
             </ScrollView>
+            {/* Rank up modal */}
+            {newRank && (
+                <View style={styles.rankUpOverlay}>
+                    <View style={styles.rankUpCard}>
+                        <ScaledText style={styles.rankUpEmoji}>{newRank.emoji}</ScaledText>
+                        <ScaledText style={styles.rankUpLabel}>AWANS!</ScaledText>
+                        <ScaledText style={styles.rankUpSubtitle}>Nowy poziom fana:</ScaledText>
+                        <ScaledText style={styles.rankUpTitle}>{newRank.title}</ScaledText>
+                        <TouchableOpacity
+                            style={styles.rankUpButton}
+                            activeOpacity={0.85}
+                            onPress={() => setNewRank(null)}
+                        >
+                            <ScaledText style={styles.rankUpButtonText}>Świetnie!</ScaledText>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
         </SafeAreaView>
     );
 }
@@ -509,6 +535,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         letterSpacing: 0.3,
     },
+
     // Hidden share card
     shareCardWrapper: {
         position: 'absolute',
@@ -517,103 +544,189 @@ const styles = StyleSheet.create({
     },
     shareCard: {
         width: 360,
-        borderRadius: 24,
-        overflow: 'hidden',
-    },
-    shareCardHeader: {
-        backgroundColor: '#2E5A2E',
-        paddingTop: 36,
-        paddingBottom: 32,
-        paddingHorizontal: 28,
+        backgroundColor: '#FAF8F3',
+        borderRadius: 20,
+        padding: 32,
         alignItems: 'center',
-        overflow: 'hidden',
-    },
-    shareCardCircleTop: {
-        position: 'absolute',
-        top: -25,
-        right: -25,
-        width: 110,
-        height: 110,
-        borderRadius: 55,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-    },
-    shareCardCircleBottom: {
-        position: 'absolute',
-        bottom: -20,
-        left: -15,
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderWidth: 2,
+        borderColor: '#E8E2D8',
     },
     shareCardApp: {
-        fontSize: 11,
+        fontSize: 14,
         fontWeight: '600',
-        color: 'rgba(255,255,255,0.45)',
-        letterSpacing: 3,
-        marginBottom: 8,
-    },
-    shareCardQuizName: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: 'rgba(255,255,255,0.7)',
-        marginBottom: 20,
-    },
-    shareCardHeroScore: {
-        fontSize: 56,
-        fontWeight: '800',
-        color: '#FFFFFF',
-        marginBottom: 4,
-    },
-    shareCardHeroMax: {
-        fontSize: 28,
-        fontWeight: '500',
-        color: 'rgba(255,255,255,0.5)',
-    },
-    shareCardHeroLabel: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: 'rgba(255,255,255,0.5)',
+        color: '#9A8E7F',
         letterSpacing: 2,
-    },
-    shareCardBottom: {
-        backgroundColor: '#FAF8F3',
-        paddingTop: 28,
-        paddingBottom: 32,
-        paddingHorizontal: 28,
-        alignItems: 'center',
+        marginBottom: 16,
     },
     shareCardEmoji: {
-        fontSize: 52,
-        marginBottom: 10,
+        fontSize: 64,
+        marginBottom: 12,
     },
     shareCardLevel: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: '700',
         color: '#2C2418',
         textAlign: 'center',
-        marginBottom: 16,
-    },
-    shareCardStats: {
-        fontSize: 13,
-        color: '#9A8E7F',
         marginBottom: 20,
     },
-    shareCardSeparator: {
-        width: 40,
-        height: 1,
-        backgroundColor: '#E8E2D8',
+    shareCardScoreRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEFDFB',
+        borderRadius: 14,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderWidth: 1,
+        borderColor: '#E8E2D8',
         marginBottom: 20,
+        gap: 20,
     },
-    shareCardFooter: {
-        fontSize: 14,
-        fontWeight: '400',
-        color: '#9A8E7F',
+    shareCardScoreItem: {
+        alignItems: 'center',
     },
-    shareHint: {
+    shareCardScoreValue: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#2E5A2E',
+        marginBottom: 2,
+    },
+    shareCardScoreLabel: {
         fontSize: 12,
         color: '#9A8E7F',
+    },
+    shareCardScoreDivider: {
+        width: 1,
+        height: 32,
+        backgroundColor: '#E8E2D8',
+    },
+    shareCardFooter: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#2C2418',
         textAlign: 'center',
+    },
+    // Fan points
+    fanPointsCard: {
+        backgroundColor: '#FEFDFB',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E8E2D8',
+    },
+    fanPointsRow: {
+        marginBottom: 6,
+    },
+    fanPointsLabel: {
+        fontSize: 14,
+        color: '#2C2418',
+        fontWeight: '500',
+    },
+    fanPointsBonus: {
+        fontSize: 14,
+        color: '#2E5A2E',
+        fontWeight: '600',
+    },
+    fanPointsDivider: {
+        height: 1,
+        backgroundColor: '#E8E2D8',
+        marginVertical: 10,
+    },
+    fanPointsTotal: {
+        fontSize: 15,
+        color: '#2C2418',
+        fontWeight: '700',
+        fontFamily: 'DMSans_700Bold',
+    },
+    fanProgressSection: {
+        marginTop: 16,
+    },
+    fanProgressBar: {
+        height: 8,
+        backgroundColor: '#E8E2D8',
+        borderRadius: 4,
+        overflow: 'hidden',
         marginBottom: 10,
     },
+    fanProgressFill: {
+        height: '100%',
+        backgroundColor: '#2E5A2E',
+        borderRadius: 4,
+    },
+    fanProgressText: {
+        fontSize: 13,
+        color: '#9A8E7F',
+        textAlign: 'center',
+    },
+    fanMaxLevel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#2E5A2E',
+        textAlign: 'center',
+        marginTop: 12,
+    },
+    dailyTomorrow: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#B08A00',
+        textAlign: 'center',
+        marginTop: 14,
+    },
+    // Rank up modal
+  rankUpOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  rankUpCard: {
+    backgroundColor: '#FAF8F3',
+    borderRadius: 24,
+    padding: 36,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    borderWidth: 2,
+    borderColor: '#E8E2D8',
+  },
+  rankUpEmoji: {
+    fontSize: 72,
+    marginBottom: 16,
+  },
+  rankUpLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'DMSans_700Bold',
+    color: '#2E5A2E',
+    letterSpacing: 4,
+    marginBottom: 8,
+  },
+  rankUpTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: '#2C2418',
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  rankUpSubtitle: {
+    fontSize: 14,
+    color: '#9A8E7F',
+    marginBottom: 4,
+  },
+  rankUpButton: {
+    backgroundColor: '#2E5A2E',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+  },
+  rankUpButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
 });

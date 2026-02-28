@@ -1,9 +1,25 @@
-import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScaledText } from '../src/components/ScaledText';
-import { useQuizStore, HistoryEntry } from '../src/stores/quizStore';
+import { useQuizStore } from '../src/stores/quizStore';
+import { getItem } from '../src/utils/storage';
+import { Question } from '../src/types/quiz';
+
+interface HistoryEntry {
+    id: string;
+    quizType: 'daily' | 'random' | 'category';
+    category: string | null;
+    percent: number;
+    earnedPoints: number;
+    totalPoints: number;
+    correctCount: number;
+    totalQuestions: number;
+    date: string;
+    questions: Question[];
+    answers: Record<string, number[]>;
+}
 
 const FILTERS = ['Wszystkie', 'Quiz dnia', 'Kategorie', 'Losowe'] as const;
 type Filter = typeof FILTERS[number];
@@ -17,6 +33,15 @@ const CATEGORY_LABELS: Record<string, string> = {
     details: 'Detale',
 };
 
+const CATEGORY_ICONS: Record<string, string> = {
+    characters: '👤',
+    quotes: '💬',
+    relationships: '❤️',
+    actors: '🎭',
+    plot: '📖',
+    details: '🔍',
+};
+
 function getQuizName(entry: HistoryEntry): string {
     if (entry.quizType === 'daily') return 'Quiz Dnia';
     if (entry.quizType === 'random') return 'Losowy Quiz';
@@ -28,15 +53,6 @@ function getTypeLabel(entry: HistoryEntry): string {
     if (entry.quizType === 'random') return 'LOSOWY';
     return 'KATEGORIA';
 }
-
-const CATEGORY_ICONS: Record<string, string> = {
-    characters: '👤',
-    quotes: '💬',
-    relationships: '❤️',
-    actors: '🎭',
-    plot: '📖',
-    details: '🔍',
-};
 
 function getTypeEmoji(entry: HistoryEntry): string {
     if (entry.quizType === 'daily') return '📅';
@@ -65,16 +81,26 @@ function filterHistory(history: HistoryEntry[], filter: Filter): HistoryEntry[] 
 
 export default function HistoryScreen() {
     const router = useRouter();
-    const history = useQuizStore((s) => s.history) ?? [];
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [activeFilter, setActiveFilter] = useState<Filter>('Wszystkie');
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        getItem('ranczo_history').then((raw) => {
+            if (raw) {
+                setHistory(JSON.parse(raw));
+            }
+            setLoaded(true);
+        });
+    }, []);
 
     const filtered = filterHistory(history, activeFilter);
 
     // Stats
     const totalGames = history.length;
-    const bestPercent = totalGames > 0 ? Math.max(...history.map((h) => h.percent)) : 0;
+    const bestPercent = totalGames > 0 ? Math.max(...history.map((h: HistoryEntry) => h.percent)) : 0;
     const avgPercent = totalGames > 0
-        ? Math.round(history.reduce((s, h) => s + h.percent, 0) / totalGames)
+        ? Math.round(history.reduce((sum: number, h: HistoryEntry) => sum + h.percent, 0) / totalGames)
         : 0;
 
     const handleEntryPress = (entry: HistoryEntry) => {
@@ -142,7 +168,7 @@ export default function HistoryScreen() {
                 </ScrollView>
 
                 {/* History list */}
-                {filtered.length > 0 ? (
+                {loaded && filtered.length > 0 ? (
                     filtered.map((entry) => (
                         <TouchableOpacity
                             key={entry.id}
@@ -150,33 +176,53 @@ export default function HistoryScreen() {
                             activeOpacity={0.7}
                             onPress={() => handleEntryPress(entry)}
                         >
-                            {/* Emoji */}
                             <ScaledText style={styles.historyEmoji}>{getTypeEmoji(entry)}</ScaledText>
 
-                            {/* Text */}
                             <View style={styles.historyContent}>
-                                <ScaledText style={styles.historyName}>{getQuizName(entry)}</ScaledText>
-                                <ScaledText style={styles.historyMeta}>
-                                    {getTypeLabel(entry)} · {formatDate(entry.date)}
-                                </ScaledText>
-                                <ScaledText style={styles.historyPoints}>
-                                    {entry.earnedPoints}/{entry.totalPoints} punktów
+                                <View style={styles.historyNameRow}>
+                                    <ScaledText style={styles.historyName}>{getQuizName(entry)}</ScaledText>
+                                    <View style={[
+                                        styles.historyBadge,
+                                        entry.quizType === 'daily' && styles.historyBadgeDaily,
+                                        entry.quizType === 'random' && styles.historyBadgeRandom,
+                                        entry.quizType === 'category' && styles.historyBadgeCategory,
+                                    ]}>
+                                        <ScaledText style={[
+                                            styles.historyBadgeText,
+                                            entry.quizType === 'daily' && styles.historyBadgeTextDaily,
+                                            entry.quizType === 'random' && styles.historyBadgeTextRandom,
+                                            entry.quizType === 'category' && styles.historyBadgeTextCategory,
+                                        ]}>
+                                            {getTypeLabel(entry)}
+                                        </ScaledText>
+                                    </View>
+                                </View>
+                                <ScaledText style={styles.historyDate}>{formatDate(entry.date)}</ScaledText>
+                                <ScaledText style={styles.historyStats}>
+                                    {entry.correctCount}/{entry.totalQuestions} poprawnych | {entry.earnedPoints}/{entry.totalPoints} punktów
                                 </ScaledText>
                             </View>
 
-                            {/* Percent */}
-                            <ScaledText style={[styles.historyPercent, { color: getPercentColor(entry.percent) }]}>
-                                {entry.percent}%
-                            </ScaledText>
+                            <View style={styles.historyPercentCol}>
+                                <ScaledText style={[styles.historyPercent, { color: getPercentColor(entry.percent) }]}>
+                                    {entry.percent}%
+                                </ScaledText>
+                                <View style={styles.progressTrack}>
+                                    <View style={[
+                                        styles.progressFill,
+                                        { width: `${entry.percent}%`, backgroundColor: getPercentColor(entry.percent) },
+                                    ]} />
+                                </View>
+                            </View>
                         </TouchableOpacity>
                     ))
-                ) : (
+                ) : loaded ? (
                     <View style={styles.emptyState}>
                         <ScaledText style={styles.emptyEmoji}>🏡</ScaledText>
                         <ScaledText style={styles.emptyTitle}>Jeszcze tu pusto!</ScaledText>
                         <ScaledText style={styles.emptyDesc}>Zagraj quiz żeby zobaczyć swoje wyniki</ScaledText>
                     </View>
-                )}
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -207,8 +253,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingBottom: 40,
     },
-
-    // Title
     title: {
         fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 28,
@@ -216,8 +260,6 @@ const styles = StyleSheet.create({
         color: '#2C2418',
         marginBottom: 20,
     },
-
-    // Stats
     statsRow: {
         flexDirection: 'row',
         gap: 10,
@@ -247,8 +289,6 @@ const styles = StyleSheet.create({
         color: '#9A8E7F',
         letterSpacing: 1,
     },
-
-    // Filters
     filtersScroll: {
         marginBottom: 20,
     },
@@ -273,53 +313,97 @@ const styles = StyleSheet.create({
     filterTextActive: {
         color: '#FFFFFF',
     },
-
-    // History card
     historyCard: {
-        backgroundColor: '#FEFDFB',
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#E8E2D8',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-        minHeight: 80,
-    },
-    historyEmoji: {
-        fontSize: 28,
-        width: 36,
-        textAlign: 'center',
-    },
-    historyContent: {
-        flex: 1,
-    },
-    historyName: {
-        fontSize: 16,
-        fontWeight: '700',
-        fontFamily: 'DMSans_700Bold',
-        color: '#2C2418',
-        marginBottom: 4,
-    },
-    historyMeta: {
-        fontSize: 12,
-        color: '#9A8E7F',
-        marginBottom: 2,
-    },
-    historyPoints: {
-        fontSize: 11,
-        color: '#B0A594',
-    },
-    historyPercent: {
-        fontSize: 26,
-        fontWeight: '800',
-        fontFamily: 'DMSans_700Bold',
-        minWidth: 56,
-        textAlign: 'right',
-    },
-
-    // Empty state
+    backgroundColor: '#FEFDFB',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E8E2D8',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    minHeight: 84,
+  },
+  historyEmoji: {
+    fontSize: 26,
+    width: 36,
+    textAlign: 'center',
+  },
+  historyContent: {
+    flex: 1,
+  },
+  historyNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  historyName: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'DMSans_700Bold',
+    color: '#2C2418',
+  },
+  historyBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 4,
+  },
+  historyBadgeDaily: {
+    backgroundColor: '#E8F0E8',
+  },
+  historyBadgeRandom: {
+    backgroundColor: '#FFF8E0',
+  },
+  historyBadgeCategory: {
+    backgroundColor: '#F5F2EC',
+  },
+  historyBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  historyBadgeTextDaily: {
+    color: '#2E5A2E',
+  },
+  historyBadgeTextRandom: {
+    color: '#B08A00',
+  },
+  historyBadgeTextCategory: {
+    color: '#6B5B3E',
+  },
+  historyDate: {
+    fontSize: 12,
+    color: '#9A8E7F',
+    marginBottom: 2,
+  },
+  historyStats: {
+    fontSize: 11,
+    color: '#B0A594',
+  },
+  historyPercentCol: {
+    alignItems: 'flex-end',
+    minWidth: 56,
+  },
+  historyPercent: {
+    fontSize: 24,
+    fontWeight: '800',
+    fontFamily: 'DMSans_700Bold',
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  progressTrack: {
+    width: 48,
+    height: 5,
+    backgroundColor: '#E8E2D8',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
     emptyState: {
         alignItems: 'center',
         paddingVertical: 48,

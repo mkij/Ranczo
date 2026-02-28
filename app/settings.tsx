@@ -106,7 +106,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <ScaledText style={styles.settingsNote}>Nie dotyczy Quizu Dnia — zawsze 10 pytań</ScaledText>
+        <ScaledText style={styles.settingsNote}>Nie dotyczy Quizu Dnia - zawsze 10 pytań</ScaledText>
 
         {/* Sound */}
         <View style={styles.switchRow}>

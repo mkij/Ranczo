@@ -8,6 +8,8 @@ import { getCategoryQuestionCount } from '../src/data/questionLoader';
 import { useRouter } from 'expo-router';
 import { getRandomQuestions, getDailyQuestions } from '../src/data/questionLoader';
 import { ScaledText } from '../src/components/ScaledText';
+import { getCurrentRank, getNextRank, getPointsToNext, getProgressPercent } from '../src/utils/fanLevel';
+
 
 
 
@@ -23,6 +25,11 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
 export default function HomeScreen() {
   const bestScores = useQuizStore((s) => s.bestScores);
   const fontScale = useSettingsStore((s) => s.fontScale);
+  const totalFanPoints = useQuizStore((s) => s.totalFanPoints);
+  const currentRank = getCurrentRank(totalFanPoints);
+  const nextRank = getNextRank(totalFanPoints);
+  const pointsToNext = getPointsToNext(totalFanPoints);
+  const rankProgress = getProgressPercent(totalFanPoints);
 
   const router = useRouter();
   const startQuiz = useQuizStore((s) => s.startQuiz);
@@ -170,10 +177,28 @@ export default function HomeScreen() {
           <ScaledText style={styles.historyChevron}>›</ScaledText>
         </TouchableOpacity>
 
+        <View style={styles.separator} />
+
         {/* Fan Level */}
         <View style={styles.levelCard}>
-          <ScaledText style={styles.levelLabel}>TWÓJ POZIOM</ScaledText>
-          <ScaledText style={styles.levelTitle}>Stały bywalec ławeczki</ScaledText>
+          <View style={styles.levelHeader}>
+            <ScaledText style={styles.levelEmoji}>{currentRank.emoji}</ScaledText>
+            <View style={styles.levelInfo}>
+              <ScaledText style={styles.levelLabel}>POZIOM FANA</ScaledText>
+              <ScaledText style={styles.levelTitle}>{currentRank.title}</ScaledText>
+            </View>
+            <ScaledText style={styles.levelPoints}>{totalFanPoints} pkt</ScaledText>
+          </View>
+          {nextRank && (
+            <View style={styles.levelProgressSection}>
+              <View style={styles.levelProgressBar}>
+                <View style={[styles.levelProgressFill, { width: `${rankProgress}%` }]} />
+              </View>
+              <ScaledText style={styles.levelProgressText}>
+                {pointsToNext} pkt do: {nextRank.title}
+              </ScaledText>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -429,26 +454,63 @@ const styles = StyleSheet.create({
 
   // Level card
   levelCard: {
-    marginTop: SPACING.lg,
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 14,
+    backgroundColor: '#FEFDFB',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E8E2D8',
+  },
+  levelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  levelEmoji: {
+    fontSize: 32,
+  },
+  levelInfo: {
+    flex: 1,
   },
   levelLabel: {
-    fontSize: FONT_SIZES.label,
-    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: '600',
+    fontFamily: 'DMSans_600SemiBold',
+    color: '#9A8E7F',
     letterSpacing: 2,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   levelTitle: {
-    fontSize: 18,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: '#2C2418',
+  },
+  levelPoints: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'DMSans_700Bold',
+    color: '#2E5A2E',
+  },
+  levelProgressSection: {
+    marginTop: 14,
+  },
+  levelProgressBar: {
+    height: 6,
+    backgroundColor: '#E8E2D8',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  levelProgressFill: {
+    height: '100%',
+    backgroundColor: '#2E5A2E',
+    borderRadius: 3,
+  },
+  levelProgressText: {
+    fontSize: 12,
+    color: '#9A8E7F',
+    textAlign: 'center',
   },
   settingsButton: {
     width: 40,
@@ -495,5 +557,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#B0A594',
     marginLeft: 'auto',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E8E2D8',
+    marginTop: 4,
+    marginBottom: 16,
   },
 });

@@ -11,8 +11,10 @@ import { ScaledText } from '../src/components/ScaledText';
 import { getCurrentRank, getNextRank, getPointsToNext, getProgressPercent, DAILY_BONUS } from '../src/utils/fanLevel';
 import { useLocalSearchParams } from 'expo-router';
 import { getItem, setItem } from '../src/utils/storage';
-
-
+import { pluralizePoints } from '../src/utils/pluralize';
+import { getRandomQuestions } from '../src/data/questionLoader';
+import { useSettingsStore } from '../src/stores/settingsStore';
+import { Category } from '../src/types/quiz';
 
 
 
@@ -35,7 +37,7 @@ function isCorrectAnswer(q: Question, selected: number[]): boolean {
 
 export default function ResultScreen() {
     const router = useRouter();
-    const { questions, answers, resetQuiz, updateBestScore, completeDailyQuiz, quizType } = useQuizStore();
+    const { questions, answers, resetQuiz, updateBestScore, completeDailyQuiz, quizType, startQuiz } = useQuizStore();
     const { review } = useLocalSearchParams<{ review?: string }>();
     const isReview = review === 'true';
     const [newRank, setNewRank] = useState<{ title: string; emoji: string } | null>(null);
@@ -125,6 +127,25 @@ export default function ResultScreen() {
     }, []);
 
     const handlePlayAgain = () => {
+        const prevType = quizType;
+        const prevCategory = questions.length > 0 ? questions[0].category : null;
+        resetQuiz();
+
+        if (prevType === 'random') {
+            const newQuestions = getRandomQuestions(10);
+            startQuiz(newQuestions, 'random');
+            router.replace('/quiz');
+        } else if (prevType === 'category' && prevCategory) {
+            const questionsPerQuiz = useSettingsStore.getState().questionsPerQuiz;
+            const newQuestions = getRandomQuestions(questionsPerQuiz, { category: prevCategory as Category });
+            startQuiz(newQuestions, 'category');
+            router.replace('/quiz');
+        } else {
+            router.replace('/');
+        }
+    };
+
+    const handleGoHome = () => {
         resetQuiz();
         router.replace('/');
     };
@@ -149,22 +170,9 @@ export default function ResultScreen() {
 
                 {/* Score card */}
                 <View style={styles.scoreCard}>
-                    <View style={styles.scoreRow}>
-                        <View style={styles.scoreItem}>
-                            <ScaledText style={styles.scoreValue}>{earnedPoints}</ScaledText>
-                            <ScaledText style={styles.scoreLabel}>punktów</ScaledText>
-                        </View>
-                        <View style={styles.scoreDivider} />
-                        <View style={styles.scoreItem}>
-                            <ScaledText style={styles.scoreValue}>{correctCount}/{questions.length}</ScaledText>
-                            <ScaledText style={styles.scoreLabel}>poprawnych</ScaledText>
-                        </View>
-                        <View style={styles.scoreDivider} />
-                        <View style={styles.scoreItem}>
-                            <ScaledText style={styles.scoreValue}>{percent}%</ScaledText>
-                            <ScaledText style={styles.scoreLabel}>wyniku</ScaledText>
-                        </View>
-                    </View>
+                    <ScaledText style={styles.scoreHero}>{correctCount}/{questions.length}</ScaledText>
+                    <ScaledText style={styles.scoreHeroLabel}>poprawnych odpowiedzi</ScaledText>
+                    <ScaledText style={styles.scorePercent}>{percent}%</ScaledText>
                 </View>
 
                 {/* Action buttons */}
@@ -178,8 +186,8 @@ export default function ResultScreen() {
                     </TouchableOpacity>
                 )}
 
-                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={handlePlayAgain}>
-                    <ScaledText style={styles.secondaryButtonText}>Wróć do menu</ScaledText>
+                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={isReview ? () => router.back() : handleGoHome}>
+                    <ScaledText style={styles.secondaryButtonText}>{isReview ? 'Wróć do historii' : 'Wróć do menu'}</ScaledText>
                 </TouchableOpacity>
 
                 {/* Hidden share card */}
@@ -188,17 +196,8 @@ export default function ResultScreen() {
                         <ScaledText style={styles.shareCardApp}>Ranczo Quiz</ScaledText>
                         <ScaledText style={styles.shareCardEmoji}>{fanLevel.emoji}</ScaledText>
                         <ScaledText style={styles.shareCardLevel}>{fanLevel.title}</ScaledText>
-                        <View style={styles.shareCardScoreRow}>
-                            <View style={styles.shareCardScoreItem}>
-                                <ScaledText style={styles.shareCardScoreValue}>{earnedPoints}/{totalPoints}</ScaledText>
-                                <ScaledText style={styles.shareCardScoreLabel}>punktów</ScaledText>
-                            </View>
-                            <View style={styles.shareCardScoreDivider} />
-                            <View style={styles.shareCardScoreItem}>
-                                <ScaledText style={styles.shareCardScoreValue}>{percent}%</ScaledText>
-                                <ScaledText style={styles.shareCardScoreLabel}>wyniku</ScaledText>
-                            </View>
-                        </View>
+                        <ScaledText style={styles.shareCardScore}>{correctCount}/{questions.length} poprawnych</ScaledText>
+                        <ScaledText style={styles.shareCardPercent}>{percent}% poprawnych odpowiedzi</ScaledText>
                         <ScaledText style={styles.shareCardFooter}>A Ty ile wiesz o Ranczu? 🏡</ScaledText>
                     </View>
                 </View>
@@ -217,7 +216,7 @@ export default function ResultScreen() {
                         <View style={styles.fanPointsDivider} />
                         <View style={styles.fanPointsRow}>
                             <ScaledText style={styles.fanPointsTotal}>
-                                {earnedPoints + (isDaily ? DAILY_BONUS : 0)} punktów do poziomu fana
+                                Zdobyto {pluralizePoints(earnedPoints + (isDaily ? DAILY_BONUS : 0))} do poziomu fana
                             </ScaledText>
                         </View>
 
@@ -366,36 +365,30 @@ const styles = StyleSheet.create({
     scoreCard: {
         backgroundColor: '#FEFDFB',
         borderRadius: 16,
-        padding: 20,
+        padding: 24,
         marginBottom: 20,
         borderWidth: 1,
         borderColor: '#E8E2D8',
-    },
-    scoreRow: {
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-around',
     },
-    scoreItem: {
-        alignItems: 'center',
-        flex: 1,
-    },
-    scoreValue: {
-        fontSize: 24,
+    scoreHero: {
+        fontSize: 40,
         fontFamily: 'DMSans_700Bold',
-        fontWeight: '700',
+        fontWeight: '800',
         color: '#2E5A2E',
         marginBottom: 4,
     },
-    scoreLabel: {
-        fontSize: 12,
+    scoreHeroLabel: {
+        fontSize: 14,
         color: '#9A8E7F',
         fontWeight: '500',
+        marginBottom: 12,
     },
-    scoreDivider: {
-        width: 1,
-        height: 36,
-        backgroundColor: '#E8E2D8',
+    scorePercent: {
+        fontSize: 20,
+        fontFamily: 'DMSans_700Bold',
+        fontWeight: '700',
+        color: '#2C2418',
     },
 
     // Buttons
@@ -569,35 +562,17 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 20,
     },
-    shareCardScoreRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FEFDFB',
-        borderRadius: 14,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderWidth: 1,
-        borderColor: '#E8E2D8',
-        marginBottom: 20,
-        gap: 20,
-    },
-    shareCardScoreItem: {
-        alignItems: 'center',
-    },
-    shareCardScoreValue: {
-        fontSize: 22,
+    shareCardScore: {
+        fontSize: 28,
         fontWeight: '700',
+        fontFamily: 'DMSans_700Bold',
         color: '#2E5A2E',
-        marginBottom: 2,
+        marginBottom: 4,
     },
-    shareCardScoreLabel: {
-        fontSize: 12,
+    shareCardPercent: {
+        fontSize: 15,
         color: '#9A8E7F',
-    },
-    shareCardScoreDivider: {
-        width: 1,
-        height: 32,
-        backgroundColor: '#E8E2D8',
+        marginBottom: 20,
     },
     shareCardFooter: {
         fontSize: 15,
